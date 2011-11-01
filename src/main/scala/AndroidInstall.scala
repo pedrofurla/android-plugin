@@ -66,42 +66,69 @@ object AndroidInstall {
      classesMinJarPath, libraryJarPath, manifestPackage, proguardOption) =>
       useProguard match {
         case true =>
-          val optimizationOptions = if (proguardOptimizations.isEmpty) Seq("-dontoptimize") else proguardOptimizations
+          val optimizationOptions = {
+            if (proguardOptimizations.isEmpty) List("-dontoptimize")
+            else proguardOptimizations
+          }.toList
           val manifestr = List("!META-INF/MANIFEST.MF", "R.class", "R$*.class",
                                "TR.class", "TR$.class", "library.properties")
           val sep = JFile.pathSeparator
           val inJars = ("\"" + classDirectory.absolutePath + "\"") +:
                        proguardInJars.map("\""+_+"\""+manifestr.mkString("(", ",!**/", ")"))
 
-          val args = (
-                 "-injars" :: inJars.mkString(sep) ::
-                 "-outjars" :: "\""+classesMinJarPath.absolutePath+"\"" ::
-                 "-libraryjars" :: libraryJarPath.map("\""+_+"\"").mkString(sep) ::
-                 Nil) ++
-                 optimizationOptions ++ (
-                 "-dontwarn" :: "-dontobfuscate" ::
-                 "-dontnote scala.Enumeration" ::
-                 "-dontnote org.xml.sax.EntityResolver" ::
-                 "-keep public class * extends android.app.Activity" ::
-                 "-keep public class * extends android.app.Service" ::
-                 "-keep public class * extends android.appwidget.AppWidgetProvider" ::
-                 "-keep public class * extends android.content.BroadcastReceiver" ::
-                 "-keep public class * extends android.content.ContentProvider" ::
-                 "-keep public class * extends android.view.View" ::
-                 "-keep public class * extends android.app.Application" ::
-                 "-keep public class "+manifestPackage+".** { public protected *; }" ::
-                 "-keep public class * implements junit.framework.Test { public void test*(); }" ::
-                 proguardOption :: Nil )
+          val proguardBaseArgs = (
+            "-injars" :: inJars.mkString(sep) ::
+            "-outjars" :: "\""+classesMinJarPath.absolutePath+"\"" ::
+            "-libraryjars" :: libraryJarPath.map("\""+_+"\"").mkString(sep) ::
+            Nil
+          )
+          val defaultProguardArgs = List (
+              "-dontwarn",
+              "-dontobfuscate",
+              "-dontnote scala.Enumeration",
+              "-dontnote org.xml.sax.EntityResolver",
+              "-keep public class * extends android.app.Activity",
+              "-keep public class * extends android.app.Service",
+              "-keep public class * extends android.appwidget.AppWidgetProvider",
+              "-keep public class * extends android.content.BroadcastReceiver",
+              "-keep public class * extends android.content.ContentProvider",
+              "-keep public class * extends android.view.View",
+              "-keep public class * extends android.app.Application",
+              "-keep public class * implements junit.framework.Test { public void test*(); }",
+              proguardOption
+            )
+
+          val cfgFile = new File("proguard.cfg")
           val config = new ProGuardConfiguration
-          new ConfigurationParser(args.toArray[String]).parse(config)
-          streams.log.debug("executing proguard: "+args.mkString("\n"))
+          val allArgs: Array[String] = {
+            "-keep public class " + manifestPackage + ".** { public protected *; }" ::
+            optimizationOptions ++ {
+              if (cfgFile.exists) {
+                streams.log.info("using ProGuard configuration " + cfgFile.getAbsolutePath)
+                proguardBaseArgs ++ parseCfg(cfgFile)
+              }
+              else {
+                streams.log.info("using default ProGuard options")
+                proguardBaseArgs ++ defaultProguardArgs
+              }
+            }
+          }.toArray
+          val parser = new ConfigurationParser(allArgs)
+          parser parse config
+
+          streams.log.debug("executing ProGuard with " + allArgs)
           new ProGuard(config).execute
           Some(classesMinJarPath)
         case false =>
-          streams.log.info("Skipping Proguard")
+          streams.log.info("Skipping ProGuard")
           None
       }
     }
+
+  private def parseCfg(file: File): List[String] = {
+    val lines = scala.io.Source.fromFile(file).getLines.toList
+    lines.map(_.trim).map(_.split("#").head).filterNot(_.isEmpty)
+  }
 
   private def packageTask(debug: Boolean):Project.Initialize[Task[File]] = (packageConfig, streams) map { (c, s) =>
     val builder = new ApkBuilder(c, debug)
