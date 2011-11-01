@@ -6,9 +6,27 @@ import Keys._
 import AndroidKeys._
 
 object TypedResources {
-  private def generateTypedResourcesTask =
-    (typedResource, layoutResources, jarPath, manifestPackage, streams) map {
-    (typedResource, layoutResources, jarPath, manifestPackage, s) =>
+
+  def generateExtraResource(manifestPackage: String, extraResource: File) = {
+    val extra =
+      """|/* AUTO-GENERATED. DO NOT MODIFY. CHANGES WILL BE LOST */
+         |
+         |package %s
+         |
+         |object ER {
+         |  val buildTime = %dL
+         |}
+         |""".stripMargin.format(manifestPackage, System.currentTimeMillis)
+    IO write (extraResource, extra)
+    Seq(extraResource)
+  }
+
+  def generateTypedResourcesTask =
+    (typedResource, extraResource, layoutResources, jarPath, manifestPackage, streams) map {
+    (typedResource, extraResource, layoutResources, jarPath, manifestPackage, s) =>
+
+      generateExtraResource(manifestPackage, extraResource)
+
       val Id = """@\+id/(.*)""".r
       val androidJarLoader = ClasspathUtilities.toLoader(jarPath)
 
@@ -93,6 +111,9 @@ object TypedResources {
     managedScalaPath <<= (target) ( _ / "src_managed" / "main" / "scala"),
     typedResource <<= (manifestPackage, managedScalaPath) {
       _.split('.').foldLeft(_) ((p, s) => p / s) / "TR.scala"
+    },
+    extraResource <<= (manifestPackage, managedScalaPath) {
+      _.split('.').foldLeft(_) ((p, s) => p / s) / "ER.scala"
     },
     layoutResources <<= (mainResPath) (_ / "layout" ** "*.xml" get),
 
