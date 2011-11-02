@@ -16,6 +16,7 @@ object AndroidKeys {
 
   /** Proguard Settings */
   val proguardOption = SettingKey[String]("proguard-option")
+  val silenceProguard = SettingKey[Boolean]("silence-proguard")
   val proguardOptimizations = SettingKey[Seq[String]]("proguard-optimizations")
   val libraryJarPath = SettingKey[Seq[File]]("library-path")
 
@@ -82,6 +83,7 @@ object AndroidKeys {
     """Typed resource file to be generated, also includes
        interfaces to access these resources.""")
   val layoutResources = SettingKey[Seq[File]]("layout-resources")
+  val generateExtraResources = SettingKey[Boolean]("generate-extra-resources")
 
   /** Market Publish Settings */
   val keystorePath = SettingKey[File]("key-store-path")

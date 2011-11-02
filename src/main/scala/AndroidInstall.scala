@@ -1,11 +1,12 @@
 import proguard.{Configuration=>ProGuardConfiguration, ProGuard, ConfigurationParser}
 
-import sbt._
+import sbt.{ Console => SbtConsole, _ }
 import Keys._
 import AndroidKeys._
 import AndroidHelpers._
 
 import java.io.{File => JFile}
+import java.lang.{System => JSystem }
 
 object AndroidInstall {
 
@@ -60,19 +61,25 @@ object AndroidInstall {
     }
 
   private def proguardTask: Project.Initialize[Task[Option[File]]] =
-    (useProguard, proguardOptimizations, classDirectory, proguardInJars, streams,
-     classesMinJarPath, libraryJarPath, manifestPackage, proguardOption) map {
-    (useProguard, proguardOptimizations, classDirectory, proguardInJars, streams,
-     classesMinJarPath, libraryJarPath, manifestPackage, proguardOption) =>
+    (useProguard, proguardOptimizations, classDirectory, proguardInJars,
+     classesMinJarPath, libraryJarPath, manifestPackage, proguardOption,
+     silenceProguard) map {
+    (useProguard, proguardOptimizations, classDirectory, proguardInJars,
+     classesMinJarPath, libraryJarPath, manifestPackage, proguardOption,
+     silenceProguard) =>
       useProguard match {
         case true =>
-          val optimizationOptions = if (proguardOptimizations.isEmpty) Seq("-dontoptimize") else proguardOptimizations
-          val manifestr = List("!META-INF/MANIFEST.MF", "R.class", "R$*.class",
-                               "ER.class", "ER$.class",
-                               "TR.class", "TR$.class", "library.properties")
+          val optimizationOptions =
+            if (proguardOptimizations.isEmpty) Seq("-dontoptimize")
+            else proguardOptimizations
+          val manifestr =
+            List("!META-INF/MANIFEST.MF", "R.class", "R$*.class",
+                 "ER.class", "ER$.class",
+                 "TR.class", "TR$.class", "library.properties")
           val sep = JFile.pathSeparator
-          val inJars = ("\"" + classDirectory.absolutePath + "\"") +:
-                       proguardInJars.map("\""+_+"\""+manifestr.mkString("(", ",!**/", ")"))
+          val inJars =
+            ("\"" + classDirectory.absolutePath + "\"") +:
+          proguardInJars.map("\""+_+"\""+manifestr.mkString("(", ",!**/", ")"))
 
           val args = (
                  "-injars" :: inJars.mkString(sep) ::
@@ -95,11 +102,40 @@ object AndroidInstall {
                  proguardOption :: Nil )
           val config = new ProGuardConfiguration
           new ConfigurationParser(args.toArray[String]).parse(config)
-          streams.log.debug("executing proguard: "+args.mkString("\n"))
+          // streams.log.debug("executing proguard: "+args.mkString("\n"))
+          val originalOut = JSystem.out
+          import java.io.{ ByteArrayOutputStream, PrintStream }
+          import scala.io.Source
+          val outStream = new ByteArrayOutputStream
+          if (silenceProguard) {
+            JSystem.setOut(new PrintStream(outStream, true))
+          }
           new ProGuard(config).execute
+          JSystem setOut originalOut
+          val badStarts = Seq (
+            "ProGuard, version ",
+            "ProGuard is released under the GNU General Public License. You therefore",
+            "must ensure that programs that link to it (scala, ...)",
+            "carry the GNU General Public License as well. Alternatively, you can",
+            "apply for an exception with the author of ProGuard.",
+            "Note: You're ignoring all warnings!",
+            "Reading library jar",
+            "Reading program jar",
+            "Reading program directory",
+            "Preparing output jar",
+            "  Copying resources from program directory",
+            "  Copying resources from program jar"
+          )
+          Source.fromString(outStream.toString).getLines.foreach { line =>
+            var prefix = false
+            badStarts foreach { start =>
+              if (line.startsWith(start)) prefix = true
+            }
+            if (prefix == false) originalOut.println(line)
+          }
           Some(classesMinJarPath)
         case false =>
-          streams.log.info("Skipping Proguard")
+          // streams.log.info("Skipping Proguard")
           None
       }
     }
