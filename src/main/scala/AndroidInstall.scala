@@ -71,7 +71,8 @@ object AndroidInstall {
             else proguardOptimizations
           }.toList
           val manifestr = List("!META-INF/MANIFEST.MF", "R.class", "R$*.class",
-                               "TR.class", "TR$.class", "library.properties")
+                               "TR.class", "TR$.class", "ER.class",
+                               "ER$.class", "library.properties")
           val sep = JFile.pathSeparator
           val inJars = ("\"" + classDirectory.absolutePath + "\"") +:
                        proguardInJars.map("\""+_+"\""+manifestr.mkString("(", ",!**/", ")"))

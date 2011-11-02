@@ -81,8 +81,6 @@ object AndroidKeys {
   val typedResource = SettingKey[File]("typed-resource",
     """Typed resource file to be generated, also includes
        interfaces to access these resources.""")
-  val extraResource = SettingKey[File]("extra-resource",
-    """Extra resource file to be generated""")
   val layoutResources = SettingKey[Seq[File]]("layout-resources")
 
   /** Market Publish Settings */
