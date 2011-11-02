@@ -50,43 +50,53 @@ object TypedResources {
       }.filterNot {
         case (id, _) => reserved.contains(id)
       }
+      val trRaw =
+"""
+package %s
+import _root_.android.app.{Activity, Dialog}
+import _root_.android.view.View
 
-      IO.write(typedResource,
-    """     |package %s
-            |import _root_.android.app.{Activity, Dialog}
-            |import _root_.android.view.View
-            |
-            |case class TypedResource[T](id: Int)
-            |object TR {
-            |%s
-            |}
-            |trait TypedViewHolder {
-            |  def findViewById( id: Int ): View
-            |  def findView[T](tr: TypedResource[T]) = findViewById(tr.id).asInstanceOf[T]
-            |}
-            |trait TypedView extends View with TypedViewHolder
-            |trait TypedActivityHolder extends TypedViewHolder
-            |trait TypedActivity extends Activity with TypedActivityHolder
-            |trait TypedDialog extends Dialog with TypedViewHolder
-            |object TypedResource {
-            |  implicit def view2typed(v: View) = new TypedViewHolder { 
-            |    def findViewById( id: Int ) = v.findViewById( id )
-            |  }
-            |  implicit def activity2typed(a: Activity) = new TypedViewHolder { 
-            |    def findViewById( id: Int ) = a.findViewById( id )
-            |  }
-            |  implicit def dialog2typed(d: Dialog) = new TypedViewHolder { 
-            |    def findViewById( id: Int ) = d.findViewById( id )
-            |  }
-            |}
-            |""".stripMargin.format(
-              manifestPackage, resources map { case (id, classname) =>
-                "  val %s = TypedResource[%s](R.id.%s)".format(id, classname, id)
-              } mkString "\n"
-            )
-        )
-        s.log.info("Wrote %s" format(typedResource))
-        Seq(typedResource)
+case class TypedResource[T](id: Int)
+object TR {
+%s
+}
+trait TypedViewHolder {
+  def findViewById( id: Int ): View
+  def findView[T](tr: TypedResource[T]) = findViewById(tr.id).asInstanceOf[T]
+}
+trait TypedView extends View with TypedViewHolder
+trait TypedActivityHolder extends TypedViewHolder
+trait TypedActivity extends Activity with TypedActivityHolder
+trait TypedDialog extends Dialog with TypedViewHolder
+object TypedResource {
+  implicit def view2typed(v: View) = new TypedViewHolder { 
+    def findViewById( id: Int ) = v.findViewById( id )
+  }
+  implicit def activity2typed(a: Activity) = new TypedViewHolder { 
+    def findViewById( id: Int ) = a.findViewById( id )
+  }
+  implicit def dialog2typed(d: Dialog) = new TypedViewHolder { 
+    def findViewById( id: Int ) = d.findViewById( id )
+  }
+}
+"""
+      val tr = trRaw.format(
+        manifestPackage, resources map { case (id, classname) =>
+          "  val %s = TypedResource[%s](R.id.%s)".format(id, classname, id)
+        } mkString "\n"
+      )
+
+      val er =
+"""
+object ER {
+  val buildTime = %dL
+}
+""".format(System.currentTimeMillis)
+
+
+      IO.write(typedResource, tr + er)
+      s.log.info("Wrote %s" format(typedResource))
+      Seq(typedResource)
     }
 
   lazy val settings: Seq[Setting[_]] = inConfig(Android) (Seq (

@@ -68,6 +68,7 @@ object AndroidInstall {
         case true =>
           val optimizationOptions = if (proguardOptimizations.isEmpty) Seq("-dontoptimize") else proguardOptimizations
           val manifestr = List("!META-INF/MANIFEST.MF", "R.class", "R$*.class",
+                               "ER.class", "ER$.class",
                                "TR.class", "TR$.class", "library.properties")
           val sep = JFile.pathSeparator
           val inJars = ("\"" + classDirectory.absolutePath + "\"") +:
