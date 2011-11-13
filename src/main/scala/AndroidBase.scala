@@ -92,8 +92,15 @@ object AndroidBase {
     jarPath <<= (platformPath, jarName) (_ / _),
     mapsJarPath <<= (addonsPath) (_ / AndroidDefaults.DefaultMapsJarName),
 
-    addonsPath <<= (sdkPath, apiLevel) { (sPath, api) =>
-      sPath / "add-ons" / ("addon_google_apis_google_inc_" + api) / "libs"
+    addonsPath <<= (sdkPath, apiLevel) { (sPath, api) => {
+        def mkAddonPath(path: String): java.io.File =
+          sPath / "add-ons" / (path + api) / "libs"
+        val path1 = mkAddonPath("addon_google_apis_google_inc_")
+        val path2 = mkAddonPath("addon-google_apis-google_inc_-")
+        if (path1.exists) path1
+        else if (path2.exists) path2
+        else error("addon path not found, tried " + path1 + " and " + path2)
+      }
     },
 
     libraryJarPath <<= (jarPath, addonsJarPath) (_ +++ _ get),
