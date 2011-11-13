@@ -69,6 +69,7 @@ object AndroidBase {
     resourcesApkPath <<= (target, resourcesApkName) (_ / _),
     packageApkPath <<= (target, packageApkName) (_ / _),
     useProguard := true,
+    silenceProguard := false,
     proguardOptimizations := Seq.empty,
 
     addonsJarPath <<= (manifestTemplatePath, manifestSchema, mapsJarPath) {
