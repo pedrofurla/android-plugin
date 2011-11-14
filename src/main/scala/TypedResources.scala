@@ -7,8 +7,8 @@ import AndroidKeys._
 
 object TypedResources {
   private def generateTypedResourcesTask =
-    (typedResource, layoutResources, jarPath, manifestPackage, streams) map {
-    (typedResource, layoutResources, jarPath, manifestPackage, s) =>
+    (typedResource, layoutResources, jarPath, manifestPackage, streams, generateExtraResources) map {
+    (typedResource, layoutResources, jarPath, manifestPackage, s, generateExtraResources) =>
       val Id = """@\+id/(.*)""".r
       val androidJarLoader = ClasspathUtilities.toLoader(jarPath)
 
@@ -93,8 +93,8 @@ object ER {
 }
 """.format(System.currentTimeMillis)
 
-
-      IO.write(typedResource, tr + er)
+      val text = if (generateExtraResources) { tr + er } else tr
+      IO.write(typedResource, text)
       s.log.info("Wrote %s" format(typedResource))
       Seq(typedResource)
     }
