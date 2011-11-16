@@ -6,3 +6,4 @@ project/build/target/
 project/plugins/src_managed/
 project/plugins/project/
 temp
+android-plugin.iml
