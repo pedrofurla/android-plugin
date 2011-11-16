@@ -61,10 +61,10 @@ object AndroidInstall {
     }
 
   private def proguardTask: Project.Initialize[Task[Option[File]]] =
-    (useProguard, proguardOptimizations, classDirectory, proguardInJars,
+    (useProguard, proguardOptimizations, classDirectory, proguardInJars, //streams,
      classesMinJarPath, libraryJarPath, manifestPackage, proguardOption,
      silenceProguard) map {
-    (useProguard, proguardOptimizations, classDirectory, proguardInJars,
+    (useProguard, proguardOptimizations, classDirectory, proguardInJars, //streams,
      classesMinJarPath, libraryJarPath, manifestPackage, proguardOption,
      silenceProguard) =>
       useProguard match {
@@ -102,11 +102,26 @@ object AndroidInstall {
                  proguardOption :: Nil )
           val config = new ProGuardConfiguration
           new ConfigurationParser(args.toArray[String]).parse(config)
-          // streams.log.debug("executing proguard: "+args.mkString("\n"))
+
+          /*streams.log.debug("executing proguard: "+args.mkString("\n"))
+          streams.log.info("BLLLLEEEEHHHH")
+          println("AAAAAAAAAAAAAA")*/
           val originalOut = JSystem.out
           import java.io.{ ByteArrayOutputStream, PrintStream }
           import scala.io.Source
-          val outStream = new ByteArrayOutputStream
+          val outStream = new ByteArrayOutputStream {
+            override def write(p1: Int) {
+              originalOut.write(p1);
+            }
+
+            override def write(p1: Array[Byte], p2: Int, p3: Int) {
+              originalOut.write(p1,p2,p3);
+            }
+
+            override def write(p1: Array[Byte]) {
+              originalOut.print(p1);
+            }
+          }
           if (silenceProguard) {
             JSystem.setOut(new PrintStream(outStream, true))
           }
@@ -126,13 +141,13 @@ object AndroidInstall {
             "  Copying resources from program directory",
             "  Copying resources from program jar"
           )
-          Source.fromString(outStream.toString).getLines.foreach { line =>
+          /*Source.fromString(outStream.toString).getLines.foreach { line =>
             var prefix = false
             badStarts foreach { start =>
               if (line.startsWith(start)) prefix = true
             }
-            if (prefix == false) originalOut.println(line)
-          }
+            if (prefix == false)  originalOut.println(line)
+          }*/
           Some(classesMinJarPath)
         case false =>
           // streams.log.info("Skipping Proguard")
