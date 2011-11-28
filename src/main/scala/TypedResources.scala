@@ -7,8 +7,8 @@ import AndroidKeys._
 
 object TypedResources {
   private def generateTypedResourcesTask =
-    (typedResource, layoutResources, jarPath, manifestPackage, streams, generateExtraResources) map {
-    (typedResource, layoutResources, jarPath, manifestPackage, s, generateExtraResources) =>
+    (typedResource, layoutResources, jarPath, manifestPackage, streams, generateExtraResources, googleMapsKey, facebookAppId) map {
+    (typedResource, layoutResources, jarPath, manifestPackage, s, generateExtraResources, googleMapsKey, facebookAppId) =>
       val Id = """@\+id/(.*)""".r
       val androidJarLoader = ClasspathUtilities.toLoader(jarPath)
 
@@ -90,8 +90,10 @@ object TypedResource {
 """
 object ER {
   val buildTime = %dL
+  val googleMapsKey = "%s"
+  val facebookAppId = "%s"
 }
-""".format(System.currentTimeMillis)
+""".format(System.currentTimeMillis, googleMapsKey, facebookAppId)
 
       val text = if (generateExtraResources) { tr + er } else tr
       IO.write(typedResource, text)

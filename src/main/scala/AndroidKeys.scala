@@ -19,6 +19,8 @@ object AndroidKeys {
   val silenceProguard = SettingKey[Boolean]("silence-proguard")
   val proguardOptimizations = SettingKey[Seq[String]]("proguard-optimizations")
   val libraryJarPath = SettingKey[Seq[File]]("library-path")
+  val facebookAppId = SettingKey[String]("facebook-app-id")
+  val googleMapsKey = SettingKey[String]("google-maps-key")
 
   /** Default Settings */
   val aaptName = SettingKey[String]("aapt-name")
