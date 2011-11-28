@@ -21,6 +21,7 @@ object AndroidKeys {
   val libraryJarPath = SettingKey[Seq[File]]("library-path")
   val facebookAppId = SettingKey[String]("facebook-app-id")
   val googleMapsKey = SettingKey[String]("google-maps-key")
+  val debugKeystore = SettingKey[String]("debug-keystore")
 
   /** Default Settings */
   val aaptName = SettingKey[String]("aapt-name")
