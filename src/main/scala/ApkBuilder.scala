@@ -25,12 +25,12 @@ case class ApkConfig(
  * The source for Google's Ant task that uses it is
  * [[http://android.git.kernel.org/?p=platform/sdk.git;a=blob;f=anttasks/src/com/android/ant/ApkBuilderTask.java here]].
  */
-class ApkBuilder(project: ApkConfig, debug: Boolean) {
+class ApkBuilder(project: ApkConfig, debug: Boolean, debugKeystore: String) {
   val classLoader = ClasspathUtilities.toLoader(project.androidToolsPath / "lib" / "sdklib.jar")
   val klass = classLoader.loadClass("com.android.sdklib.build.ApkBuilder")
   val constructor = klass.getConstructor(
     classOf[File], classOf[File], classOf[File], classOf[String], classOf[PrintStream])
-  val keyStore = if (debug) getDebugKeystore else null
+  val keyStore = if (debug) debugKeystore else null
   val outputStream = new ByteArrayOutputStream
   val builder = constructor.newInstance(
     project.packageApkPath, project.resourcesApkPath, project.classesDexPath, keyStore, new PrintStream(outputStream))

@@ -70,6 +70,8 @@ object AndroidBase {
     packageApkPath <<= (target, packageApkName) (_ / _),
     useProguard := true,
     silenceProguard := false,
+    googleMapsKey := "",
+    facebookAppId := "",
     generateExtraResources := false,
     proguardOptimizations := Seq.empty,
 
